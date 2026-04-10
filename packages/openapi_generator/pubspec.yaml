@@ -1,0 +1,12 @@
+name: openapi_generator
+description: Parse OpenAPI specs and generate Dart API client code for Flutter projects.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  yaml: ^3.1.2
+
+dev_dependencies:
+  test: ^1.25.0
