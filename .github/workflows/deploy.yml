@@ -20,21 +20,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup FVM
-        uses: kuhnroyal/flutter-fvm-config-action@v2
-        id: fvm-config
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ steps.fvm-config.outputs.FLUTTER_VERSION }}
+          flutter-version: '3.41.6'
           channel: stable
+          cache: true
 
       - name: Install dependencies
-        run: fvm flutter pub get
+        run: flutter pub get
 
       - name: Build web
-        run: fvm flutter build web --release --base-href /Lark/
+        run: flutter build web --release --base-href /Lark/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
