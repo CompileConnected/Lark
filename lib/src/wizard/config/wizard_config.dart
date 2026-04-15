@@ -7,7 +7,7 @@ enum StateManagement implements UiOption {
   provider('Provider + ChangeNotifier'),
   riverpod('Riverpod'),
   bloc('Bloc / Cubit'),
-  getx('GetX'),
+  getx('GetX', hidden: true),
   mobx('MobX'),
   signals('Signals');
 
