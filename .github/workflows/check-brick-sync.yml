@@ -1,0 +1,43 @@
+name: Check Brick Sync
+
+on:
+  pull_request:
+    paths:
+      - 'bricks/lark_template/**'
+      - 'lib/src/wizard/generator/brick_templates.g.dart'
+      - 'tools/sync_brick.dart'
+  push:
+    branches: [main]
+    paths:
+      - 'bricks/lark_template/**'
+      - 'lib/src/wizard/generator/brick_templates.g.dart'
+      - 'tools/sync_brick.dart'
+  workflow_dispatch:
+
+jobs:
+  check-sync:
+    name: Verify brick_templates.g.dart is up-to-date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Regenerate brick_templates.g.dart
+        run: dart run tools/sync_brick.dart
+
+      - name: Check for diff
+        run: |
+          if git diff --exit-code lib/src/wizard/generator/brick_templates.g.dart; then
+            echo "brick_templates.g.dart is up-to-date"
+          else
+            echo "::error::brick_templates.g.dart is stale. Run: dart run tools/sync_brick.dart"
+            exit 1
+          fi

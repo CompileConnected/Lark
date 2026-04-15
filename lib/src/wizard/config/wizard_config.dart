@@ -1,7 +1,10 @@
-enum StateManagement {
-  none('None (setState)'),
-  changeNotifier('ChangeNotifier'),
-  provider('Provider'),
+abstract interface class UiOption {
+  bool get hidden;
+}
+
+enum StateManagement implements UiOption {
+  none('None (setState)', hidden: true),
+  provider('Provider + ChangeNotifier'),
   riverpod('Riverpod'),
   bloc('Bloc / Cubit'),
   getx('GetX'),
@@ -9,7 +12,11 @@ enum StateManagement {
   signals('Signals');
 
   final String label;
-  const StateManagement(this.label);
+
+  @override
+  final bool hidden;
+
+  const StateManagement(this.label, {this.hidden = false});
 }
 
 enum Navigation {
@@ -38,11 +45,11 @@ enum NetworkClient {
   const NetworkClient(this.label);
 
   Set<Platform> get unsupportedPlatforms => switch (this) {
-        none => {},
-        http => {},
-        dio => {},
-        rhttp => {Platform.web},
-      };
+    none => {},
+    http => {},
+    dio => {},
+    rhttp => {Platform.web},
+  };
 }
 
 enum LocalStorage {
@@ -56,20 +63,20 @@ enum LocalStorage {
   const LocalStorage(this.label);
 
   Set<Platform> get unsupportedPlatforms => switch (this) {
-        none => {},
-        sharedPreferences => {},
-        hiveCe => {},
-        isarCommunity => {Platform.web},
-        drift => {Platform.web},
-      };
+    none => {},
+    sharedPreferences => {},
+    hiveCe => {},
+    isarCommunity => {Platform.web},
+    drift => {Platform.web},
+  };
 
   bool get needsCodeGen => switch (this) {
-        none => false,
-        sharedPreferences => false,
-        hiveCe => false,
-        isarCommunity => true,
-        drift => true,
-      };
+    none => false,
+    sharedPreferences => false,
+    hiveCe => false,
+    isarCommunity => true,
+    drift => true,
+  };
 }
 
 enum UiToolkit {
@@ -90,10 +97,10 @@ enum EnvConfig {
 
   /// flutter_dotenv works on all Flutter platforms; dotenv is Dart-only (CLI/server).
   Set<Platform> get unsupportedPlatforms => switch (this) {
-        none => {},
-        flutterDotenv => {},
-        dotenv => {},
-      };
+    none => {},
+    flutterDotenv => {},
+    dotenv => {},
+  };
 }
 
 enum Logging {
@@ -144,10 +151,10 @@ enum OpenApiClientGenerator {
 
   /// Which NetworkClient this generator corresponds to.
   NetworkClient get networkClient => switch (this) {
-        OpenApiClientGenerator.dart => NetworkClient.http,
-        OpenApiClientGenerator.dio => NetworkClient.dio,
-        OpenApiClientGenerator.dioAlt => NetworkClient.dio,
-      };
+    OpenApiClientGenerator.dart => NetworkClient.http,
+    OpenApiClientGenerator.dio => NetworkClient.dio,
+    OpenApiClientGenerator.dioAlt => NetworkClient.dio,
+  };
 
   /// Whether the generated code needs build_runner source gen.
   bool get needsSourceGen => this == OpenApiClientGenerator.dio;
@@ -189,12 +196,8 @@ class WizardConfig {
   WizardConfig({
     this.projectName = 'my_app',
     this.orgName = 'com.example',
-    this.platforms = const {
-      Platform.android,
-      Platform.ios,
-      Platform.web,
-    },
-    this.stateManagement = StateManagement.none,
+    this.platforms = const {Platform.android, Platform.ios, Platform.web},
+    this.stateManagement = StateManagement.provider,
     this.navigation = Navigation.goRouter,
     this.dependencyInjection = DependencyInjection.none,
     this.networkClient = NetworkClient.none,
@@ -218,7 +221,6 @@ class WizardConfig {
       case StateManagement.getx:
         return DependencyInjection.none;
       case StateManagement.bloc:
-      case StateManagement.changeNotifier:
       case StateManagement.mobx:
       case StateManagement.signals:
       case StateManagement.none:
@@ -248,7 +250,9 @@ class WizardConfig {
   /// When OpenAPI is selected, force the network client to match the generator choice.
   NetworkClient get effectiveNetworkClient {
     if (isOpenApiEnabled) return openApiClientGenerator.networkClient;
-    return networkClient == NetworkClient.none ? NetworkClient.none : networkClient;
+    return networkClient == NetworkClient.none
+        ? NetworkClient.none
+        : networkClient;
   }
 
   bool get canAttachLoggerToHttp =>
@@ -263,19 +267,15 @@ class WizardConfig {
       _networkPlatformConflict || _storagePlatformConflict;
 
   bool get _networkPlatformConflict =>
-      networkClient.unsupportedPlatforms
-          .intersection(platforms)
-          .isNotEmpty;
+      networkClient.unsupportedPlatforms.intersection(platforms).isNotEmpty;
 
   bool get _storagePlatformConflict =>
-      localStorage.unsupportedPlatforms
-          .intersection(platforms)
-          .isNotEmpty;
+      localStorage.unsupportedPlatforms.intersection(platforms).isNotEmpty;
 
   Set<Platform> get conflictingPlatforms => {
-        ...networkClient.unsupportedPlatforms.intersection(platforms),
-        ...localStorage.unsupportedPlatforms.intersection(platforms),
-      };
+    ...networkClient.unsupportedPlatforms.intersection(platforms),
+    ...localStorage.unsupportedPlatforms.intersection(platforms),
+  };
 
   String get dartPackageName => projectName.replaceAll('-', '_');
 }

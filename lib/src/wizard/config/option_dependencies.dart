@@ -18,7 +18,6 @@ List<DepEntry> resolveDependencies(WizardConfig config) {
   // State management
   switch (config.stateManagement) {
     case StateManagement.none:
-    case StateManagement.changeNotifier:
       break;
     case StateManagement.provider:
       deps.add(const DepEntry('provider', '^6.1.0'));

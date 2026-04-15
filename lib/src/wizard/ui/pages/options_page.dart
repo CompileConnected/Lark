@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openapi_generator/openapi_generator.dart';
+
 import '../../config/wizard_config.dart';
 
 class OptionsPage extends StatelessWidget {
@@ -20,18 +21,47 @@ class OptionsPage extends StatelessWidget {
             children: [
               Text('Options', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 4),
-              Text('Choose the libraries and tools for your project.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline)),
+              Text(
+                'Choose the libraries and tools for your project.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+              ),
               const SizedBox(height: 24),
-              _sectionCard(context, Icons.layers, 'State Management', _smSection()),
+              _sectionCard(
+                context,
+                Icons.layers,
+                'State Management',
+                _smSection(),
+              ),
               _sectionCard(context, Icons.palette, 'UI Toolkit', _uiSection()),
               _sectionCard(context, Icons.wifi, 'Network', _networkSection()),
               _openApiSection(context),
-              _sectionCard(context, Icons.storage, 'Local Storage', _storageSection()),
-              _sectionCard(context, Icons.vpn_key, 'Environment Variables', _envSection()),
+              _sectionCard(
+                context,
+                Icons.storage,
+                'Local Storage',
+                _storageSection(),
+              ),
+              _sectionCard(
+                context,
+                Icons.vpn_key,
+                'Environment Variables',
+                _envSection(),
+              ),
               _diCard(context),
-              _sectionCard(context, Icons.article, 'Logging', _loggingSection()),
-              _sectionCard(context, Icons.bug_report, 'DB Debugger', _dbDebuggerSection()),
+              _sectionCard(
+                context,
+                Icons.article,
+                'Logging',
+                _loggingSection(),
+              ),
+              _sectionCard(
+                context,
+                Icons.bug_report,
+                'DB Debugger',
+                _dbDebuggerSection(),
+              ),
               _sectionCard(context, Icons.code, 'Linting', _lintingSection()),
               _autoIncludedNotice(),
               _platformConflictNotice(),
@@ -42,32 +72,30 @@ class OptionsPage extends StatelessWidget {
     );
   }
 
-  Widget _sectionCard(BuildContext context, IconData icon, String title, Widget child) {
+  Widget _sectionCard(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Widget child,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Card(
         elevation: 0,
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: colorScheme.outlineVariant),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(icon, size: 18, color: colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                ],
-              ),
-              const SizedBox(height: 12),
-              child,
-            ],
-          ),
+        child: ExpansionTile(
+          leading: Icon(icon, size: 18, color: colorScheme.primary),
+          title: Text(title, style: Theme.of(context).textTheme.titleMedium),
+          initiallyExpanded: true,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          children: [child],
         ),
       ),
     );
@@ -82,19 +110,32 @@ class OptionsPage extends StatelessWidget {
     bool Function(T)? disabledBuilder,
     String? Function(T)? disabledInfoBuilder,
   }) {
+    // Automatically skip any enum value that opts out of the UI via UiOption.hidden
+    final visibleOptions = options
+        .where((e) => e is! UiOption || !(e as UiOption).hidden)
+        .toList();
     return Column(
-      children: options.map((e) {
+      children: visibleOptions.map((e) {
         final isDisabled = disabledBuilder?.call(e) ?? false;
         final info = infoBuilder?.call(e);
         final disabledInfo = disabledInfoBuilder?.call(e);
-        final allInfo = <String>[?info, if (isDisabled) ?disabledInfo].join(' — ');
+        final allInfo = <String>[
+          ?info,
+          if (isDisabled) ?disabledInfo,
+        ].join(' — ');
 
         return RadioListTile<T>(
           title: Text(labelBuilder(e)),
-          subtitle: allInfo.isNotEmpty ? Text(allInfo, style: const TextStyle(fontSize: 12)) : null,
+          subtitle: allInfo.isNotEmpty
+              ? Text(allInfo, style: const TextStyle(fontSize: 12))
+              : null,
           value: e,
           groupValue: selected,
-          onChanged: isDisabled ? null : (v) { if (v != null) onChanged(v); },
+          onChanged: isDisabled
+              ? null
+              : (v) {
+                  if (v != null) onChanged(v);
+                },
           dense: true,
           visualDensity: VisualDensity.compact,
         );
@@ -105,29 +146,40 @@ class OptionsPage extends StatelessWidget {
   // --- Sections ---
 
   Widget _smSection() => _radioGroup<StateManagement>(
-        options: StateManagement.values,
-        selected: config.stateManagement,
-        labelBuilder: (e) => e.label,
-        onChanged: (v) { config.stateManagement = v; onChanged(); },
-        infoBuilder: (e) => _smInfo(e),
-      );
+    options: StateManagement.values,
+    selected: config.stateManagement,
+    labelBuilder: (e) => e.label,
+    onChanged: (v) {
+      config.stateManagement = v;
+      onChanged();
+    },
+    infoBuilder: (e) => _smInfo(e),
+  );
 
   Widget _uiSection() => _radioGroup<UiToolkit>(
-        options: UiToolkit.values,
-        selected: config.uiToolkit,
-        labelBuilder: (e) => e.label,
-        onChanged: (v) { config.uiToolkit = v; onChanged(); },
-      );
+    options: UiToolkit.values,
+    selected: config.uiToolkit,
+    labelBuilder: (e) => e.label,
+    onChanged: (v) {
+      config.uiToolkit = v;
+      onChanged();
+    },
+  );
 
   Widget _networkSection() => _radioGroup<NetworkClient>(
-        options: NetworkClient.values,
-        selected: config.networkClient,
-        labelBuilder: (e) => e.label,
-        onChanged: (v) { config.networkClient = v; _autoResetAttachLogger(); onChanged(); },
-        infoBuilder: (e) => _networkInfo(e),
-        disabledBuilder: (e) => _isPlatformIncompatible(e.unsupportedPlatforms),
-        disabledInfoBuilder: (e) => _platformUnavailableMessage(e.unsupportedPlatforms),
-      );
+    options: NetworkClient.values,
+    selected: config.networkClient,
+    labelBuilder: (e) => e.label,
+    onChanged: (v) {
+      config.networkClient = v;
+      _autoResetAttachLogger();
+      onChanged();
+    },
+    infoBuilder: (e) => _networkInfo(e),
+    disabledBuilder: (e) => _isPlatformIncompatible(e.unsupportedPlatforms),
+    disabledInfoBuilder: (e) =>
+        _platformUnavailableMessage(e.unsupportedPlatforms),
+  );
 
   Widget _openApiSection(BuildContext context) {
     return _sectionCard(
@@ -145,7 +197,8 @@ class OptionsPage extends StatelessWidget {
               config.apiGeneration = v;
               if (v == ApiGeneration.openApi) {
                 // Sync network client with the generator choice
-                config.networkClient = config.openApiClientGenerator.networkClient;
+                config.networkClient =
+                    config.openApiClientGenerator.networkClient;
               }
               onChanged();
             },
@@ -153,9 +206,18 @@ class OptionsPage extends StatelessWidget {
           ),
           if (config.isOpenApiEnabled) ...[
             const SizedBox(height: 8),
-            _infoBox('Uses openapi_generator (requires Java). Select which HTTP library the generated client will use:'),
+            _infoBox(
+              'Uses openapi_generator (requires Java). Select which HTTP library the generated client will use:',
+            ),
             const SizedBox(height: 8),
-            Text('Generator / HTTP Library:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+            Text(
+              'Generator / HTTP Library:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
             const SizedBox(height: 4),
             _radioGroup<OpenApiClientGenerator>(
               options: OpenApiClientGenerator.values,
@@ -172,7 +234,9 @@ class OptionsPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             if (config.openApiClientGenerator.needsSourceGen)
-              _infoBox('Dio generator requires build_runner source gen after openapi-generator runs.'),
+              _infoBox(
+                'Dio generator requires build_runner source gen after openapi-generator runs.',
+              ),
             const SizedBox(height: 12),
             TextField(
               decoration: const InputDecoration(
@@ -188,8 +252,13 @@ class OptionsPage extends StatelessWidget {
               },
             ),
             const SizedBox(height: 8),
-            Text('or paste spec content (JSON/YAML):',
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.outline)),
+            Text(
+              'or paste spec content (JSON/YAML):',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
             const SizedBox(height: 4),
             TextField(
               decoration: const InputDecoration(
@@ -221,11 +290,17 @@ class OptionsPage extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.all(8),
-            child: Row(children: [
-              SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
-              SizedBox(width: 8),
-              Text('Validating spec...', style: TextStyle(fontSize: 12)),
-            ]),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 8),
+                Text('Validating spec...', style: TextStyle(fontSize: 12)),
+              ],
+            ),
           );
         }
         if (!snapshot.hasData) return const SizedBox.shrink();
@@ -240,60 +315,99 @@ class OptionsPage extends StatelessWidget {
             color: errors.isNotEmpty
                 ? Colors.red.shade50
                 : warnings.isNotEmpty
-                    ? Colors.orange.shade50
-                    : Colors.green.shade50,
+                ? Colors.orange.shade50
+                : Colors.green.shade50,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: errors.isNotEmpty
                   ? Colors.red.shade200
                   : warnings.isNotEmpty
-                      ? Colors.orange.shade200
-                      : Colors.green.shade200,
+                  ? Colors.orange.shade200
+                  : Colors.green.shade200,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Icon(
-                  errors.isNotEmpty ? Icons.error_outline : warnings.isNotEmpty ? Icons.warning_amber : Icons.check_circle,
-                  size: 16,
-                  color: errors.isNotEmpty ? Colors.red.shade700 : warnings.isNotEmpty ? Colors.orange.shade700 : Colors.green.shade700,
-                ),
-                const SizedBox(width: 6),
-                Expanded(child: Text(
-                  errors.isNotEmpty
-                      ? '${errors.length} error(s) found'
-                      : warnings.isNotEmpty
+              Row(
+                children: [
+                  Icon(
+                    errors.isNotEmpty
+                        ? Icons.error_outline
+                        : warnings.isNotEmpty
+                        ? Icons.warning_amber
+                        : Icons.check_circle,
+                    size: 16,
+                    color: errors.isNotEmpty
+                        ? Colors.red.shade700
+                        : warnings.isNotEmpty
+                        ? Colors.orange.shade700
+                        : Colors.green.shade700,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      errors.isNotEmpty
+                          ? '${errors.length} error(s) found'
+                          : warnings.isNotEmpty
                           ? '${warnings.length} warning(s), spec OK'
                           : 'Spec valid: ${infos.where((d) => d.phase == 'Parse').map((d) => d.message).join('; ')}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: errors.isNotEmpty ? Colors.red.shade700 : warnings.isNotEmpty ? Colors.orange.shade700 : Colors.green.shade700,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: errors.isNotEmpty
+                            ? Colors.red.shade700
+                            : warnings.isNotEmpty
+                            ? Colors.orange.shade700
+                            : Colors.green.shade700,
+                      ),
+                    ),
                   ),
-                )),
-              ]),
+                ],
+              ),
               if (errors.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                ...errors.take(3).map((d) => Padding(
-                  padding: const EdgeInsets.only(left: 22, top: 1),
-                  child: Text('[${d.phase}] ${d.message}',
-                      style: TextStyle(fontSize: 11, color: Colors.red.shade700)),
-                )),
+                ...errors
+                    .take(3)
+                    .map(
+                      (d) => Padding(
+                        padding: const EdgeInsets.only(left: 22, top: 1),
+                        child: Text(
+                          '[${d.phase}] ${d.message}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ),
+                    ),
                 if (errors.length > 3)
                   Padding(
                     padding: const EdgeInsets.only(left: 22, top: 2),
-                    child: Text('+${errors.length - 3} more error(s)...',
-                        style: TextStyle(fontSize: 11, color: Colors.red.shade400)),
+                    child: Text(
+                      '+${errors.length - 3} more error(s)...',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.red.shade400,
+                      ),
+                    ),
                   ),
               ],
               if (warnings.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                ...warnings.take(3).map((d) => Padding(
-                  padding: const EdgeInsets.only(left: 22, top: 1),
-                  child: Text('[${d.phase}] ${d.message}',
-                      style: TextStyle(fontSize: 11, color: Colors.orange.shade700)),
-                )),
+                ...warnings
+                    .take(3)
+                    .map(
+                      (d) => Padding(
+                        padding: const EdgeInsets.only(left: 22, top: 1),
+                        child: Text(
+                          '[${d.phase}] ${d.message}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ),
+                    ),
               ],
             ],
           ),
@@ -311,31 +425,42 @@ class OptionsPage extends StatelessWidget {
     } catch (e) {
       return GenResult(
         success: false,
-        diagnostics: [GenDiagnostic(GenSeverity.error, 'Validate', e.toString())],
+        diagnostics: [
+          GenDiagnostic(GenSeverity.error, 'Validate', e.toString()),
+        ],
       );
     }
   }
 
   Widget _storageSection() => _radioGroup<LocalStorage>(
-        options: LocalStorage.values,
-        selected: config.localStorage,
-        labelBuilder: (e) => e.label,
-        onChanged: (v) { config.localStorage = v; _autoResetDbDebugger(); onChanged(); },
-        infoBuilder: (e) => _storageInfo(e),
-        disabledBuilder: (e) => _isPlatformIncompatible(e.unsupportedPlatforms),
-        disabledInfoBuilder: (e) => _platformUnavailableMessage(e.unsupportedPlatforms),
-      );
+    options: LocalStorage.values,
+    selected: config.localStorage,
+    labelBuilder: (e) => e.label,
+    onChanged: (v) {
+      config.localStorage = v;
+      _autoResetDbDebugger();
+      onChanged();
+    },
+    infoBuilder: (e) => _storageInfo(e),
+    disabledBuilder: (e) => _isPlatformIncompatible(e.unsupportedPlatforms),
+    disabledInfoBuilder: (e) =>
+        _platformUnavailableMessage(e.unsupportedPlatforms),
+  );
 
   Widget _envSection() => _radioGroup<EnvConfig>(
-        options: EnvConfig.values,
-        selected: config.envConfig,
-        labelBuilder: (e) => e.label,
-        onChanged: (v) { config.envConfig = v; onChanged(); },
-        infoBuilder: (e) => _envInfo(e),
-      );
+    options: EnvConfig.values,
+    selected: config.envConfig,
+    labelBuilder: (e) => e.label,
+    onChanged: (v) {
+      config.envConfig = v;
+      onChanged();
+    },
+    infoBuilder: (e) => _envInfo(e),
+  );
 
   Widget _diCard(BuildContext context) {
-    final smHandlesDI = config.stateManagement == StateManagement.provider ||
+    final smHandlesDI =
+        config.stateManagement == StateManagement.provider ||
         config.stateManagement == StateManagement.riverpod ||
         config.stateManagement == StateManagement.getx;
 
@@ -344,12 +469,17 @@ class OptionsPage extends StatelessWidget {
       Icons.account_tree,
       'Dependency Injection',
       smHandlesDI
-          ? _infoBox('${config.stateManagement.label} handles DI internally. No external DI needed.')
+          ? _infoBox(
+              '${config.stateManagement.label} handles DI internally. No external DI needed.',
+            )
           : _radioGroup<DependencyInjection>(
               options: DependencyInjection.values,
               selected: config.dependencyInjection,
               labelBuilder: (e) => e.label,
-              onChanged: (v) { config.dependencyInjection = v; onChanged(); },
+              onChanged: (v) {
+                config.dependencyInjection = v;
+                onChanged();
+              },
             ),
     );
   }
@@ -363,7 +493,11 @@ class OptionsPage extends StatelessWidget {
           options: Logging.values,
           selected: config.logging,
           labelBuilder: (e) => e.label,
-          onChanged: (v) { config.logging = v; _autoResetAttachLogger(); onChanged(); },
+          onChanged: (v) {
+            config.logging = v;
+            _autoResetAttachLogger();
+            onChanged();
+          },
           infoBuilder: (e) => _loggingInfo(e),
         ),
         if (config.logging != Logging.none) ...[
@@ -377,7 +511,12 @@ class OptionsPage extends StatelessWidget {
               style: const TextStyle(fontSize: 12),
             ),
             value: config.attachLoggerToHttp,
-            onChanged: hasNetwork ? (v) { config.attachLoggerToHttp = v ?? false; onChanged(); } : null,
+            onChanged: hasNetwork
+                ? (v) {
+                    config.attachLoggerToHttp = v ?? false;
+                    onChanged();
+                  }
+                : null,
             controlAffinity: ListTileControlAffinity.leading,
             dense: true,
             visualDensity: VisualDensity.compact,
@@ -388,21 +527,31 @@ class OptionsPage extends StatelessWidget {
   }
 
   Widget _dbDebuggerSection() => _radioGroup<DbDebugger>(
-        options: DbDebugger.values,
-        selected: config.dbDebugger,
-        labelBuilder: (e) => e.label,
-        onChanged: (v) { config.dbDebugger = v; onChanged(); },
-        infoBuilder: (e) => _dbDebuggerInfo(e),
-        disabledBuilder: (e) => e == DbDebugger.driftDbViewer && config.localStorage != LocalStorage.drift,
-        disabledInfoBuilder: (e) => e == DbDebugger.driftDbViewer ? 'Requires Drift as local storage' : null,
-      );
+    options: DbDebugger.values,
+    selected: config.dbDebugger,
+    labelBuilder: (e) => e.label,
+    onChanged: (v) {
+      config.dbDebugger = v;
+      onChanged();
+    },
+    infoBuilder: (e) => _dbDebuggerInfo(e),
+    disabledBuilder: (e) =>
+        e == DbDebugger.driftDbViewer &&
+        config.localStorage != LocalStorage.drift,
+    disabledInfoBuilder: (e) => e == DbDebugger.driftDbViewer
+        ? 'Requires Drift as local storage'
+        : null,
+  );
 
   Widget _lintingSection() => _radioGroup<Linting>(
-        options: Linting.values,
-        selected: config.linting,
-        labelBuilder: (e) => e.label,
-        onChanged: (v) { config.linting = v; onChanged(); },
-      );
+    options: Linting.values,
+    selected: config.linting,
+    labelBuilder: (e) => e.label,
+    onChanged: (v) {
+      config.linting = v;
+      onChanged();
+    },
+  );
 
   // --- Helpers ---
 
@@ -418,7 +567,12 @@ class OptionsPage extends StatelessWidget {
         children: [
           Icon(Icons.info_outline, size: 18, color: Colors.blue.shade700),
           const SizedBox(width: 8),
-          Expanded(child: Text(text, style: TextStyle(color: Colors.blue.shade700, fontSize: 13))),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(color: Colors.blue.shade700, fontSize: 13),
+            ),
+          ),
         ],
       ),
     );
@@ -440,7 +594,8 @@ class OptionsPage extends StatelessWidget {
   }
 
   void _autoResetDbDebugger() {
-    if (config.dbDebugger == DbDebugger.driftDbViewer && config.localStorage != LocalStorage.drift) {
+    if (config.dbDebugger == DbDebugger.driftDbViewer &&
+        config.localStorage != LocalStorage.drift) {
       config.dbDebugger = DbDebugger.none;
     }
   }
@@ -448,68 +603,82 @@ class OptionsPage extends StatelessWidget {
   // --- Info ---
 
   String? _smInfo(StateManagement sm) => switch (sm) {
-        StateManagement.none => 'Use StatefulWidget + setState',
-        StateManagement.changeNotifier => 'Built-in, no extra dependencies',
-        StateManagement.provider => 'Provider + ChangeNotifier, most established',
-        StateManagement.riverpod => 'Compile-time safe, auto-includes freezed + build_runner',
-        StateManagement.bloc => 'Event-driven, auto-includes freezed + build_runner',
-        StateManagement.getx => 'All-in-one: state, routing, DI',
-        StateManagement.mobx => 'Observable-based, requires build_runner',
-        StateManagement.signals => 'Lightweight reactive signals',
-      };
+    StateManagement.none => 'Use StatefulWidget + setState',
+    StateManagement.provider => 'Provider + ChangeNotifier, most established',
+    StateManagement.riverpod =>
+      'Compile-time safe, auto-includes freezed + build_runner',
+    StateManagement.bloc =>
+      'Event-driven, auto-includes freezed + build_runner',
+    StateManagement.getx => 'All-in-one: state, routing, DI',
+    StateManagement.mobx => 'Observable-based, requires build_runner',
+    StateManagement.signals => 'Lightweight reactive signals',
+  };
 
   String? _networkInfo(NetworkClient nc) => switch (nc) {
-        NetworkClient.none => null,
-        NetworkClient.http => 'Official, basic HTTP client',
-        NetworkClient.dio => 'Feature-rich: interceptors, FormData, retry',
-        NetworkClient.rhttp => 'Rust-based via FFI, HTTP/2 & HTTP/3, fast (no Web)',
-      };
+    NetworkClient.none => null,
+    NetworkClient.http => 'Official, basic HTTP client',
+    NetworkClient.dio => 'Feature-rich: interceptors, FormData, retry',
+    NetworkClient.rhttp => 'Rust-based via FFI, HTTP/2 & HTTP/3, fast (no Web)',
+  };
 
   String? _storageInfo(LocalStorage ls) => switch (ls) {
-        LocalStorage.none => null,
-        LocalStorage.sharedPreferences => 'Key-value store, simple',
-        LocalStorage.hiveCe => 'NoSQL, fast, actively maintained community fork',
-        LocalStorage.isarCommunity => 'NoSQL, queries, indexed, community maintained (no Web)',
-        LocalStorage.drift => 'Type-safe SQLite, code-gen (no Web)',
-      };
+    LocalStorage.none => null,
+    LocalStorage.sharedPreferences => 'Key-value store, simple',
+    LocalStorage.hiveCe => 'NoSQL, fast, actively maintained community fork',
+    LocalStorage.isarCommunity =>
+      'NoSQL, queries, indexed, community maintained (no Web)',
+    LocalStorage.drift => 'Type-safe SQLite, code-gen (no Web)',
+  };
 
   String? _envInfo(EnvConfig e) => switch (e) {
-        EnvConfig.none => null,
-        EnvConfig.flutterDotenv => 'Load .env files via Flutter asset bundle',
-        EnvConfig.dotenv => 'Pure Dart .env loader, works on all platforms',
-      };
+    EnvConfig.none => null,
+    EnvConfig.flutterDotenv => 'Load .env files via Flutter asset bundle',
+    EnvConfig.dotenv => 'Pure Dart .env loader, works on all platforms',
+  };
 
   String? _loggingInfo(Logging l) => switch (l) {
-        Logging.none => null,
-        Logging.logging => 'Dart built-in, lightweight, hierarchical log levels',
-        Logging.logger => 'Beautiful console output, file logging support',
-      };
+    Logging.none => null,
+    Logging.logging => 'Dart built-in, lightweight, hierarchical log levels',
+    Logging.logger => 'Beautiful console output, file logging support',
+  };
 
   String? _dbDebuggerInfo(DbDebugger d) => switch (d) {
-        DbDebugger.none => null,
-        DbDebugger.driftDbViewer => 'Visual in-app Drift database inspector',
-      };
+    DbDebugger.none => null,
+    DbDebugger.driftDbViewer => 'Visual in-app Drift database inspector',
+  };
 
   // --- Notices ---
 
   String? _apiGenInfo(ApiGeneration a) => switch (a) {
-        ApiGeneration.none => null,
-        ApiGeneration.openApi => 'Generate Dart models + API client from OpenAPI spec (requires Java)',
-      };
+    ApiGeneration.none => null,
+    ApiGeneration.openApi =>
+      'Generate Dart models + API client from OpenAPI spec (requires Java)',
+  };
 
   String? _openApiGenTypeInfo(OpenApiClientGenerator g) => switch (g) {
-        OpenApiClientGenerator.dart => 'Uses http package, simple and lightweight',
-        OpenApiClientGenerator.dio => 'Uses Dio, feature-rich with interceptors',
-        OpenApiClientGenerator.dioAlt => 'Uses dart-openapi-maven generator with Dio',
-      };
+    OpenApiClientGenerator.dart => 'Uses http package, simple and lightweight',
+    OpenApiClientGenerator.dio => 'Uses Dio, feature-rich with interceptors',
+    OpenApiClientGenerator.dioAlt =>
+      'Uses dart-openapi-maven generator with Dio',
+  };
 
   Widget _autoIncludedNotice() {
     final notes = <String>[];
     notes.add('Navigation: GoRouter (always included)');
-    if (config.needsCodeGeneration) notes.add('build_runner (auto-included for code generation)');
-    if (config.needsFreezed) notes.add('freezed + json_serializable (recommended for ${config.stateManagement.label})');
-    if (config.isRhttpSelected) notes.add('rhttp requires Rust toolchain (rustup.rs) and latest NDK for Android');
-    if (config.isOpenApiEnabled) notes.add('OpenAPI: openapi_generator + ${config.openApiClientGenerator.label} (auto-included, requires Java)');
+    if (config.needsCodeGeneration)
+      notes.add('build_runner (auto-included for code generation)');
+    if (config.needsFreezed)
+      notes.add(
+        'freezed + json_serializable (recommended for ${config.stateManagement.label})',
+      );
+    if (config.isRhttpSelected)
+      notes.add(
+        'rhttp requires Rust toolchain (rustup.rs) and latest NDK for Android',
+      );
+    if (config.isOpenApiEnabled)
+      notes.add(
+        'OpenAPI: openapi_generator + ${config.openApiClientGenerator.label} (auto-included, requires Java)',
+      );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -523,16 +692,33 @@ class OptionsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [
-              Icon(Icons.auto_fix_high, size: 18, color: Colors.orange.shade700),
-              const SizedBox(width: 8),
-              Text('Auto-included dependencies & notes', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange.shade700)),
-            ]),
+            Row(
+              children: [
+                Icon(
+                  Icons.auto_fix_high,
+                  size: 18,
+                  color: Colors.orange.shade700,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Auto-included dependencies & notes',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange.shade700,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 4),
-            ...notes.map((n) => Padding(
-              padding: const EdgeInsets.only(left: 26, top: 2),
-              child: Text(n, style: TextStyle(color: Colors.orange.shade800, fontSize: 13)),
-            )),
+            ...notes.map(
+              (n) => Padding(
+                padding: const EdgeInsets.only(left: 26, top: 2),
+                child: Text(
+                  n,
+                  style: TextStyle(color: Colors.orange.shade800, fontSize: 13),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -555,10 +741,12 @@ class OptionsPage extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 18, color: Colors.red.shade700),
             const SizedBox(width: 8),
-            Expanded(child: Text(
-              'Platform conflict: selected options don\'t support ${conflicts.map((p) => p.label).join(', ')}. The generated project may not build for those platforms.',
-              style: TextStyle(color: Colors.red.shade700, fontSize: 13),
-            )),
+            Expanded(
+              child: Text(
+                'Platform conflict: selected options don\'t support ${conflicts.map((p) => p.label).join(', ')}. The generated project may not build for those platforms.',
+                style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+              ),
+            ),
           ],
         ),
       ),
