@@ -1,0 +1,3 @@
+[submodule "bricks/lark_template"]
+	path = bricks/lark_template
+	url = https://github.com/CompileConnected/lark_template.git
